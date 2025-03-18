@@ -5,4 +5,3 @@ langchain-huggingface
 langchain-chroma
 python-dotenv
 anthropic
-redirect
