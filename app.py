@@ -1,13 +1,15 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 import PyPDF2
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from dotenv import load_dotenv
 import anthropic
+from flask_cors import CORS  
 
 app = Flask(__name__)
+CORS(app)  
 load_dotenv()
 
 # Initialize embeddings
@@ -21,6 +23,9 @@ if not ANTHROPIC_API_KEY:
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 vectorstore = None
+
+# Load FRONT_END_BASE_URL from environment variables
+FRONT_END_BASE_URL = os.getenv("FRONT_END_BASE_URL", "http://127.0.0.1:5500")  # Default to localhost if not set
 
 def process_pdf(file_path):
     text = ""
@@ -70,7 +75,7 @@ Answer the user's question using both the retrieved context and your own general
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}],
         )
-        # Return the text that Anthropic provides (assumes it's well-formed HTML)
+        # Return the text that Anthrop provides (assumes it's well-formed HTML)
         return message.content[0].text
     except Exception as e:
         return f"Error generating response: {str(e)}"
@@ -111,7 +116,7 @@ def chat_endpoint():
     try:
         data = request.json
         user_query = data.get('question', '')
-        
+
         if not user_query:
             return jsonify({'error': 'No question provided'}), 400
 
@@ -121,24 +126,25 @@ def chat_endpoint():
                 return jsonify({'error': 'Failed to initialize vector store'}), 500
 
         results = perform_similarity_search(user_query, k=2)
-        
+
         if not results:
             return jsonify({'error': 'No relevant context found'}), 404
-        
+
         context = "\n".join([doc.page_content for doc in results])
         response = generate_response(context, user_query)
-        
+
         return jsonify({
             'answer': response,  # This is the HTML
             'context': context
         })
-
     except Exception as e:
         print(f"Error in chat endpoint: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     if initialize_vectorstore():
-        app.run(debug=True , port=6969)
+        # Use the PORT environment variable provided by Render
+        port = int(os.getenv("PORT", 10000))  # Default to 10000 if PORT is not set
+        app.run(host="0.0.0.0", port=port, debug=True)
     else:
         print("Failed to initialize vector store. Please check the PDF file and try again.")
