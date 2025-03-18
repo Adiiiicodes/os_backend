@@ -78,7 +78,7 @@ Answer the user's question using both the retrieved context and your own general
 def initialize_vectorstore():
     global vectorstore
     
-    file_path = "ilovepdf_merged (1).pdf"
+    file_path = "osmod1.pdf"
     
     if not os.path.exists(file_path):
         print(f"Error: File {file_path} not found")
@@ -139,6 +139,6 @@ def chat_endpoint():
 
 if __name__ == "__main__":
     if initialize_vectorstore():
-        app.run(debug=True)
+        app.run(debug=True , port=6969)
     else:
         print("Failed to initialize vector store. Please check the PDF file and try again.")
