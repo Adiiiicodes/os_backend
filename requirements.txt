@@ -6,3 +6,4 @@ langchain-chroma
 python-dotenv
 anthropic
 flask_cors
+pymongo
